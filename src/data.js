@@ -1394,5 +1394,22 @@ const airports = [
   {"code":"BGG","name":"Bingöl Airport","lat":38.861111,"long":40.5925},
 
 ];
+//   {"id":24,"name":"American Airlines"},
+
+export function getAirlineById(id) {
+  for (let airline of airlines) {
+    if (airline.id === id) {
+      return airline.name;
+    }
+  }
+}
+
+export function getAirportByCode(code) {
+  for (let airport of airports) {
+    if(airport.code === code) {
+      return airport.name;
+    }
+  }
+}
 
 export default {routes, airlines, airports};
