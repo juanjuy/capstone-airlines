@@ -1399,7 +1399,7 @@ const airports = [
 export function getAirlineById(id) {
   for (let airline of airlines) {
     if (airline.id === id) {
-      return airline.name;
+      return airline;
     }
   }
 }
@@ -1407,7 +1407,7 @@ export function getAirlineById(id) {
 export function getAirportByCode(code) {
   for (let airport of airports) {
     if(airport.code === code) {
-      return airport.name;
+      return airport;
     }
   }
 }
