@@ -8,11 +8,14 @@ import { Table } from './components/Table';
 const App = () => {
   const [ currentPage, updateCurrentPage ] = useState(2);
   const [ currentRoutes, updateCurrentRoutes ] = useState(data.routes)
-  var rowsPerPage = 25
-  const [ pages, updatePages ] = useState(buildPages(rowsPerPage)) // updatePages(buildPages())
+  var rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
+  const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
 
   const filterRoutes = () => {
     // stand-in value, WIP
+    // left this because it might be called to update currentRoutes
+    // like buildPages is called to update pages
+    // just an artifact of brainstorming -- feel free to delete
   }
 
   const displayedRoutes = () => {
@@ -34,7 +37,6 @@ const App = () => {
       }
       pagesArr.push(page)
     }
-    console.log(pagesArr);
     return pagesArr
   }
 
@@ -42,6 +44,10 @@ const App = () => {
     if (buttonType === 'previous' && currentPage === 1) return true
     if (buttonType === 'next' && currentPage === pages.length) return true
     return false
+  }
+
+  const navButtonHandler = (increment) => {
+    return () => updateCurrentPage(currentPage + increment)
   }
 
   const formatValues = (property, value) => {
@@ -68,8 +74,8 @@ const App = () => {
         <Table className="routes-table" columns={ columns } rows={ displayedRoutes() } format={ formatValues } />
         <NavigationMessage currentPage={currentPage} totalEntries={currentRoutes.length} perPage={rowsPerPage}/>
         <div>
-          <button disabled={ validateButton('previous') } onClick={() => updateCurrentPage(currentPage - 1)}>Previous Page</button>
-          <button disabled={ validateButton('next') } onClick={() => updateCurrentPage(currentPage + 1)}>Next Page</button>
+          <NavigationButton disable={validateButton('previous')} buttonType='previous' handlerFunc={navButtonHandler}/>
+          <NavigationButton disable={validateButton('next')} buttonType='next' handlerFunc={navButtonHandler}/>
         </div>
       </section>
     </div>
@@ -84,6 +90,12 @@ function NavigationMessage({currentPage, totalEntries, perPage}) {
   } else lastEntry = firstEntry + perPage - 1
 
   return <div>Showing {firstEntry}-{lastEntry} of {totalEntries} routes.</div>
+}
+
+function NavigationButton({disable, buttonType, handlerFunc}) {
+  let increment = (buttonType === 'next' ? 1 : - 1)
+  let label = buttonType[0].toUpperCase() + buttonType.slice(1) + ' Button';
+  return <button disabled={disable} onClick={handlerFunc(increment)}>{label}</button>
 }
 
 
