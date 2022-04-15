@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { useState } from 'react';
 import './App.css';
 import data from './data';
@@ -6,11 +6,17 @@ import { getAirlineById, getAirportByCode } from './data.js';
 import { Table } from './components/Table';
 
 const App = () => {
-  const [ currentPage, updateCurrentPage ] = useState(2);
+  const [ currentPage, updateCurrentPage ] = useState(1); // 1-indexed; used in displayedRoutes and validateButton
   const [ currentRoutes, updateCurrentRoutes ] = useState(data.routes)
   var rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
   const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
-
+  
+  const columns = [
+    {name: 'Airline', property: 'airline'},
+    {name: 'Source Airport', property: 'src'},
+    {name: 'Destination Airport', property: 'dest'},
+  ];
+  
   const filterRoutes = () => {
     // stand-in value, WIP
     // left this because it might be called to update currentRoutes
@@ -24,17 +30,19 @@ const App = () => {
   }
 
   function buildPages(perPage) {
-    const data = currentRoutes;
-    const numberOfPages = Math.ceil(data.length / perPage)
-    const lastEntryIndex = data.length - 1
+    const routes = currentRoutes;
+    const numberOfPages = Math.ceil(routes.length / perPage)
+    const lastEntryIndex = routes.length - 1
     let pagesArr = [];
-    for (let n = 1; n <= numberOfPages; n++) {
+    for (let n = 0; n < numberOfPages; n++) {
       let page = [];
-      for (let rowNum = 1; rowNum <= perPage; rowNum++) {
-        let dataEntryIndex = rowNum + (perPage * n) - 1
-        if (dataEntryIndex > lastEntryIndex) break
-        page = page.concat(data[dataEntryIndex])
-      }
+      (() => {
+        for (let rowNum = 0; rowNum < perPage; rowNum++) {
+          let routesEntryIndex = rowNum + (perPage * n)
+          if (routesEntryIndex > lastEntryIndex) return
+          page = page.concat(routes[routesEntryIndex])
+        }
+      })() // IIFE to break only inner nested loop with `return`
       pagesArr.push(page)
     }
     return pagesArr
@@ -59,11 +67,6 @@ const App = () => {
     }
   }
 
-  const columns = [
-    {name: 'Airline', property: 'airline'},
-    {name: 'Source Airport', property: 'src'},
-    {name: 'Destination Airport', property: 'dest'},
-  ];
   
   return (
     <div className="app">
@@ -74,8 +77,16 @@ const App = () => {
         <Table className="routes-table" columns={ columns } rows={ displayedRoutes() } format={ formatValues } />
         <NavigationMessage currentPage={currentPage} totalEntries={currentRoutes.length} perPage={rowsPerPage}/>
         <div>
-          <NavigationButton disable={validateButton('previous')} buttonType='previous' handlerFunc={navButtonHandler}/>
-          <NavigationButton disable={validateButton('next')} buttonType='next' handlerFunc={navButtonHandler}/>
+          <NavigationButton
+            disable={validateButton('previous')}
+            buttonType='previous'
+            handlerFunc={navButtonHandler}
+          />
+          <NavigationButton
+            disable={validateButton('next')}
+            buttonType='next'
+            handlerFunc={navButtonHandler}
+          />
         </div>
       </section>
     </div>
