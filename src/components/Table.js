@@ -16,6 +16,8 @@ export const Table = ({ className, columns, rows, format }) => {
           )}
         </tr>
       </thead>
+      {rows && // this is here in case rows is passed in as undefined. 
+      // this won't be necessary once the functionality from step 10 is implemented
       <tbody>
         { rows.map((row, index) => {
           return (
@@ -27,6 +29,7 @@ export const Table = ({ className, columns, rows, format }) => {
           )
         })}
       </tbody>
+      }
     </table>
   )
 }

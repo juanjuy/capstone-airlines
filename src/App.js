@@ -1,27 +1,48 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useState } from 'react';
 import './App.css';
 import data from './data';
 import { getAirlineById, getAirportByCode } from './data.js';
 import { Table } from './components/Table';
+import { Select } from './components/Select';
 
 const App = () => {
   const [ currentPage, updateCurrentPage ] = useState(1); // 1-indexed; used in displayedRoutes and validateButton
   const [ currentRoutes, updateCurrentRoutes ] = useState(data.routes)
-  var rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
+  const rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
   const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
-  
+  const [ filteredAirlines ] = useState(data.airlines)
+  const [ selectedAirline, updateSelectedAirline ] = useState("all")
+  const [ filteredAirports ] = useState(data.airports)
+  const [ selectedAirport, updateSelectedAirport ] = useState("all")
+
+  useEffect(() => {
+    // any time we select a new airline or airport, refilter the routes
+    filterRoutes()
+
+    // also suggest putting the enable/disable logic here
+  }, [selectedAirline, selectedAirport])
+
+  useEffect(() => {
+    // when currentRoutes is updated, rebuild the pages and set current page to 1
+    updateCurrentPage(1)
+    updatePages(buildPages(rowsPerPage))
+  }, [currentRoutes])
+
   const columns = [
     {name: 'Airline', property: 'airline'},
     {name: 'Source Airport', property: 'src'},
     {name: 'Destination Airport', property: 'dest'},
   ];
-  
+
   const filterRoutes = () => {
-    // stand-in value, WIP
-    // left this because it might be called to update currentRoutes
-    // like buildPages is called to update pages
-    // just an artifact of brainstorming -- feel free to delete
+    // selectedAirports and selectedAirlines
+    const filtered = data.routes.filter(route => {
+      // if route contains selectedAirport (or all) AND selectedAirline (or all), show it
+      return ((route.airline === selectedAirline || selectedAirline === "all") &&
+          (route.src === selectedAirport || route.dest === selectedAirport || selectedAirport === "all"))
+    })
+    updateCurrentRoutes(filtered)
   }
 
   const displayedRoutes = () => {
@@ -48,7 +69,7 @@ const App = () => {
     return pagesArr
   }
 
-  const validateButton = (buttonType) => { 
+  const validateButton = (buttonType) => {
     if (buttonType === 'previous' && currentPage === 1) return true
     if (buttonType === 'next' && currentPage === pages.length) return true
     return false
@@ -67,13 +88,31 @@ const App = () => {
     }
   }
 
-  
+  const chooseAirline = (event) => {
+    // our event handlers are behaving strangely due to react so we have to use
+    // the nativeEvent property instead of access the value directly from the event.target
+    // The course solution doesn't use this, but we're not able to get it work like they did it
+    const value = event.nativeEvent.target.value
+
+    updateSelectedAirline(Number(value) ? Number(value) : value)
+  }
+
+  const chooseAirport = (event) => {
+    updateSelectedAirport(event.nativeEvent.target.value)
+  }
+
   return (
     <div className="app">
       <header className="header">
         <h1 className="title">Airline Routes</h1>
       </header>
       <section>
+        Show routes on
+        <Select options={filteredAirlines} valueKey='id' titleKey='name'
+          allTitle="All Airlines" value={selectedAirline} onSelect={chooseAirline} />
+        flying in or out of
+        <Select options={filteredAirports} valueKey='code' titleKey='name'
+          allTitle="All Airports" value={selectedAirport} onSelect={chooseAirport} />
         <Table className="routes-table" columns={ columns } rows={ displayedRoutes() } format={ formatValues } />
         <NavigationMessage currentPage={currentPage} totalEntries={currentRoutes.length} perPage={rowsPerPage}/>
         <div>
