@@ -7,14 +7,16 @@ import React from 'react';
 */
 export const Select = ({options, onSelect, valueKey, titleKey, allTitle, val}) => {
 
-  // console.log('options:', options)
+  console.log('options:', options)
   // console.log('val', val)
   return (
     <select onChange={onSelect}>
       <option value="all">{allTitle}</option>
-      {options.map(({ option, disabled}, index) => {
+      {options.map((option, index) => {
         // replace the disabled flag when you implement that property in the option objects array
         // console.log('option', option)
+        let disabled = option['disabled'] === undefined ? false : option['disabled']
+
         return <option disabled={ disabled } key={index} value={option[valueKey]}>{option[titleKey]}</option>
       })}
     </select>

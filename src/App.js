@@ -11,20 +11,18 @@ const App = () => {
   const [ currentRoutes, updateCurrentRoutes ] = useState(data.routes)
   const rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
   const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
-  const [ filteredAirlines, updateFilteredAirlines ] = useState(initialAirlines())
+  // const [ filteredAirlines, updateFilteredAirlines ] = useState(initialAirlines())
   const [ selectedAirline, updateSelectedAirline ] = useState("all")
 
-  const [ filteredAirports, updateFilteredAirports ] = useState(initialAirports())
+  // const [ filteredAirports, updateFilteredAirports ] = useState(initialAirports())
   const [ selectedAirport, updateSelectedAirport ] = useState("all")
 
-  useEffect(() => {
-    // any time we select a new airline or airport, refilter the routes
-    filterRoutes()
-    filterAirlines()
-    filterAirports()
+  // useEffect(() => {
+  //   // any time we select a new airline or airport, refilter the routes
+  //   filterRoutes()
 
-    // also suggest putting the enable/disable logic here
-  }, [selectedAirline, selectedAirport])
+  //   // also suggest putting the enable/disable logic here
+  // }, [selectedAirline, selectedAirport])
 
   useEffect(() => {
     // when currentRoutes is updated, rebuild the pages and set current page to 1
@@ -38,40 +36,17 @@ const App = () => {
     {name: 'Source Airport', property: 'src'},
     {name: 'Destination Airport', property: 'dest'},
   ];
-  // starting with all airlines array
-    // looping througheach airline, determine if airline exists in filteredRoutes (state)
-    // if airline exists in filtered routes, 
-      //disabled property = false
-    // else disabled true
-
-  // return {id: airlineId, disabled: true/false}
-  function initialAirlines() {
-    return data.airlines.map(airline => {
-      return {
-        option: airline,
-        disabled: false
-      }
-    })
-  }
 
   function filterAirlines() {
     let airlinesFiltered = data.airlines.map(airline => {
       let airportFound = currentRoutes.some(route => route.airline === airline.id)
 
       return {
-        option: airline,
+        ...airline,
         disabled: !airportFound
       }
     })
-    updateFilteredAirlines(airlinesFiltered)
-  }
-  function initialAirports() {
-    return data.airports.map(airport => {
-      return {
-        option: airport,
-        disabled: false
-      }
-    })
+    return airlinesFiltered
   }
 
   function filterAirports() {
@@ -79,11 +54,11 @@ const App = () => {
       let airportFound = currentRoutes.some(route => route.src === airport.code || route.dest === airport.code)
 
       return {
-        option: airport,
+        ...airport,
         disabled: !airportFound
       }
     })
-    updateFilteredAirports(airportsFiltered)
+    return airportsFiltered
   }
 
   const filterRoutes = () => {
@@ -145,14 +120,15 @@ const App = () => {
     // the nativeEvent property instead of access the value directly from the event.target
     // The course solution doesn't use this, but we're not able to get it work like they did it
     const value = event.nativeEvent.target.value
-
     updateSelectedAirline(Number(value) ? Number(value) : value)
+    filterRoutes()
     filterAirports()
 
   }
 
   const chooseAirport = (event) => {
     updateSelectedAirport(event.nativeEvent.target.value)
+    filterRoutes()
     filterAirlines()
   }
 
@@ -171,10 +147,10 @@ const App = () => {
         {/* pass in a p*/
         } 
       
-        <Select options={ filteredAirlines } valueKey='id' titleKey='name'
+        <Select options={ filterAirlines() } valueKey='id' titleKey='name'
           allTitle="All Airlines" val={ selectedAirline } onSelect={ chooseAirline } />
         flying in or out of
-        <Select options={ filteredAirports } valueKey='code' titleKey='name'
+        <Select options={ filterAirports() } valueKey='code' titleKey='name'
           allTitle="All Airports" val={ selectedAirport } onSelect={ chooseAirport } />
         <button onClick={ clearFilters }>Clear Filters</button>
       
