@@ -11,18 +11,19 @@ const App = () => {
   const [ currentRoutes, updateCurrentRoutes ] = useState(data.routes)
   const rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
   const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
-  // const [ filteredAirlines, updateFilteredAirlines ] = useState(initialAirlines())
   const [ selectedAirline, updateSelectedAirline ] = useState("all")
+  
+  // We removed these pieces of state to simplify the code  and instead just use a regular function (filterAirlines and filterAirports) to pass the Select component the filtered list. 
+  // const [ filteredAirlines ] = useState(initialAirlines())
+  // const [ filteredAirports ] = useState(initialAirports())
 
-  // const [ filteredAirports, updateFilteredAirports ] = useState(initialAirports())
   const [ selectedAirport, updateSelectedAirport ] = useState("all")
 
-  // useEffect(() => {
-  //   // any time we select a new airline or airport, refilter the routes
-  //   filterRoutes()
+  useEffect(() => {
+    // any time we select a new airline or airport, refilter the routes
+    filterRoutes()
 
-  //   // also suggest putting the enable/disable logic here
-  // }, [selectedAirline, selectedAirport])
+  }, [selectedAirline, selectedAirport])
 
   useEffect(() => {
     // when currentRoutes is updated, rebuild the pages and set current page to 1
@@ -38,20 +39,27 @@ const App = () => {
   ];
 
   function filterAirlines() {
+    // filters airlines based on selectedAirport and adding in 'disabled' property that controls whether the object will be grayed out in the Select component
     let airlinesFiltered = data.airlines.map(airline => {
-      let airportFound = currentRoutes.some(route => route.airline === airline.id)
+      let airlineFound = data.routes.some(route => 
+        (route.airline === airline.id)
+        && (selectedAirport === "all" || route.src === selectedAirport || route.dest === selectedAirport)
+        )
 
       return {
         ...airline,
-        disabled: !airportFound
+        disabled: !airlineFound
       }
     })
     return airlinesFiltered
   }
 
   function filterAirports() {
+    // filter airports based on selectedAirline and add 'disabled' property
     let airportsFiltered = data.airports.map(airport => {
-      let airportFound = currentRoutes.some(route => route.src === airport.code || route.dest === airport.code)
+      let airportFound = data.routes.some(route => (route.src === airport.code || route.dest === airport.code) &&
+        (route.airline === selectedAirline || selectedAirline === "all")
+      )
 
       return {
         ...airport,
@@ -119,7 +127,10 @@ const App = () => {
     // our event handlers are behaving strangely due to react so we have to use
     // the nativeEvent property instead of access the value directly from the event.target
     // The course solution doesn't use this, but we're not able to get it work like they did it
-    const value = event.nativeEvent.target.value
+    
+    // Update from Rob & Audry: Event handler seems to work on our end using regular Event object?
+    const value = event.target.value
+
     updateSelectedAirline(Number(value) ? Number(value) : value)
     filterRoutes()
     filterAirports()
@@ -127,7 +138,7 @@ const App = () => {
   }
 
   const chooseAirport = (event) => {
-    updateSelectedAirport(event.nativeEvent.target.value)
+    updateSelectedAirport(event.target.value)
     filterRoutes()
     filterAirlines()
   }
@@ -144,14 +155,12 @@ const App = () => {
       </header>
       <section>
         Show routes on
-        {/* pass in a p*/
-        } 
       
         <Select options={ filterAirlines() } valueKey='id' titleKey='name'
-          allTitle="All Airlines" val={ selectedAirline } onSelect={ chooseAirline } />
+          allTitle="All Airlines" value={ selectedAirline } onSelect={ chooseAirline } />
         flying in or out of
         <Select options={ filterAirports() } valueKey='code' titleKey='name'
-          allTitle="All Airports" val={ selectedAirport } onSelect={ chooseAirport } />
+          allTitle="All Airports" value={ selectedAirport } onSelect={ chooseAirport } />
         <button onClick={ clearFilters }>Clear Filters</button>
       
         <Table className="routes-table" columns={ columns } rows={ displayedRoutes() } format={ formatValues } />
@@ -170,15 +179,6 @@ const App = () => {
         </div>
       </section>
     </div>
-  )
-}
-
-function ClearButton({updateAirports, updateAirlines}) {
-  return (
-    <button onClick={() => {
-      updateAirports("all")
-      updateAirlines("all")
-    }}>Clear Filters</button>
   )
 }
 
