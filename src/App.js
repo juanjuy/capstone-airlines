@@ -11,14 +11,17 @@ const App = () => {
   const [ currentRoutes, updateCurrentRoutes ] = useState(data.routes)
   const rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
   const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
-  const [ filteredAirlines ] = useState(data.airlines)
+  const [ filteredAirlines, updateFilteredAirlines ] = useState(initialAirlines())
   const [ selectedAirline, updateSelectedAirline ] = useState("all")
-  const [ filteredAirports ] = useState(data.airports)
+
+  const [ filteredAirports, updateFilteredAirports ] = useState(initialAirports())
   const [ selectedAirport, updateSelectedAirport ] = useState("all")
 
   useEffect(() => {
     // any time we select a new airline or airport, refilter the routes
     filterRoutes()
+    filterAirlines()
+    filterAirports()
 
     // also suggest putting the enable/disable logic here
   }, [selectedAirline, selectedAirport])
@@ -29,11 +32,59 @@ const App = () => {
     updatePages(buildPages(rowsPerPage))
   }, [currentRoutes])
 
+
   const columns = [
     {name: 'Airline', property: 'airline'},
     {name: 'Source Airport', property: 'src'},
     {name: 'Destination Airport', property: 'dest'},
   ];
+  // starting with all airlines array
+    // looping througheach airline, determine if airline exists in filteredRoutes (state)
+    // if airline exists in filtered routes, 
+      //disabled property = false
+    // else disabled true
+
+  // return {id: airlineId, disabled: true/false}
+  function initialAirlines() {
+    return data.airlines.map(airline => {
+      return {
+        option: airline,
+        disabled: false
+      }
+    })
+  }
+
+  function filterAirlines() {
+    let airlinesFiltered = data.airlines.map(airline => {
+      let airportFound = currentRoutes.some(route => route.airline === airline.id)
+
+      return {
+        option: airline,
+        disabled: !airportFound
+      }
+    })
+    updateFilteredAirlines(airlinesFiltered)
+  }
+  function initialAirports() {
+    return data.airports.map(airport => {
+      return {
+        option: airport,
+        disabled: false
+      }
+    })
+  }
+
+  function filterAirports() {
+    let airportsFiltered = data.airports.map(airport => {
+      let airportFound = currentRoutes.some(route => route.src === airport.code || route.dest === airport.code)
+
+      return {
+        option: airport,
+        disabled: !airportFound
+      }
+    })
+    updateFilteredAirports(airportsFiltered)
+  }
 
   const filterRoutes = () => {
     // selectedAirports and selectedAirlines
@@ -69,6 +120,7 @@ const App = () => {
     return pagesArr
   }
 
+  // ayh: extract this and Button components out?
   const validateButton = (buttonType) => {
     if (buttonType === 'previous' && currentPage === 1) return true
     if (buttonType === 'next' && currentPage === pages.length) return true
@@ -95,10 +147,18 @@ const App = () => {
     const value = event.nativeEvent.target.value
 
     updateSelectedAirline(Number(value) ? Number(value) : value)
+    filterAirports()
+
   }
 
   const chooseAirport = (event) => {
     updateSelectedAirport(event.nativeEvent.target.value)
+    filterAirlines()
+  }
+
+  function clearFilters() {
+    updateSelectedAirline("all")
+    updateSelectedAirport("all")
   }
 
   return (
@@ -108,11 +168,16 @@ const App = () => {
       </header>
       <section>
         Show routes on
-        <Select options={filteredAirlines} valueKey='id' titleKey='name'
-          allTitle="All Airlines" value={selectedAirline} onSelect={chooseAirline} />
+        {/* pass in a p*/
+        } 
+      
+        <Select options={ filteredAirlines } valueKey='id' titleKey='name'
+          allTitle="All Airlines" val={ selectedAirline } onSelect={ chooseAirline } />
         flying in or out of
-        <Select options={filteredAirports} valueKey='code' titleKey='name'
-          allTitle="All Airports" value={selectedAirport} onSelect={chooseAirport} />
+        <Select options={ filteredAirports } valueKey='code' titleKey='name'
+          allTitle="All Airports" val={ selectedAirport } onSelect={ chooseAirport } />
+        <button onClick={ clearFilters }>Clear Filters</button>
+      
         <Table className="routes-table" columns={ columns } rows={ displayedRoutes() } format={ formatValues } />
         <NavigationMessage currentPage={currentPage} totalEntries={currentRoutes.length} perPage={rowsPerPage}/>
         <div>
@@ -129,6 +194,15 @@ const App = () => {
         </div>
       </section>
     </div>
+  )
+}
+
+function ClearButton({updateAirports, updateAirlines}) {
+  return (
+    <button onClick={() => {
+      updateAirports("all")
+      updateAirlines("all")
+    }}>Clear Filters</button>
   )
 }
 
