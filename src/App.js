@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useState } from 'react';
 import './App.css';
 import data from './data';
@@ -10,26 +10,58 @@ const App = () => {
   const [ currentPage, updateCurrentPage ] = useState(1); // 1-indexed; used in displayedRoutes and validateButton
   const [ currentRoutes, updateCurrentRoutes ] = useState(data.routes)
   const rowsPerPage = 25 // spec 5.6 ... not seemingly used in completed app
-  const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
   const [ selectedAirline, updateSelectedAirline ] = useState("all")
-  
+
   // We removed these pieces of state to simplify the code  and instead just use a regular function (filterAirlines and filterAirports) to pass the Select component the filtered list. 
   // const [ filteredAirlines ] = useState(initialAirlines())
   // const [ filteredAirports ] = useState(initialAirports())
 
   const [ selectedAirport, updateSelectedAirport ] = useState("all")
 
+  const filterRoutes = useCallback(
+    () => {
+    // selectedAirports and selectedAirlines
+    const filtered = data.routes.filter(route => {
+      // if route contains selectedAirport (or all) AND selectedAirline (or all), show it
+      return ((route.airline === selectedAirline || selectedAirline === "all") &&
+          (route.src === selectedAirport || route.dest === selectedAirport || selectedAirport === "all"))
+    })
+    updateCurrentRoutes(filtered)
+  }, [selectedAirport, selectedAirline])
+
+  const buildPages = useCallback(
+    (perPage) => {
+    const routes = currentRoutes;
+    const numberOfPages = Math.ceil(routes.length / perPage)
+    const lastEntryIndex = routes.length - 1
+    let pagesArr = [];
+    for (let n = 0; n < numberOfPages; n++) {
+      let page = [];
+      (() => {
+        for (let rowNum = 0; rowNum < perPage; rowNum++) {
+          let routesEntryIndex = rowNum + (perPage * n)
+          if (routesEntryIndex > lastEntryIndex) return
+          page = page.concat(routes[routesEntryIndex])
+        }
+      })() // IIFE to break only inner nested loop with `return`
+      pagesArr.push(page)
+    }
+    return pagesArr
+  }, [currentRoutes])
+
+  const [ pages, updatePages ] = useState(buildPages(rowsPerPage))
+
   useEffect(() => {
     // any time we select a new airline or airport, refilter the routes
     filterRoutes()
 
-  }, [selectedAirline, selectedAirport])
+  }, [selectedAirline, selectedAirport, filterRoutes])
 
   useEffect(() => {
     // when currentRoutes is updated, rebuild the pages and set current page to 1
     updateCurrentPage(1)
     updatePages(buildPages(rowsPerPage))
-  }, [currentRoutes])
+  }, [currentRoutes, buildPages])
 
 
   const columns = [
@@ -41,7 +73,7 @@ const App = () => {
   function filterAirlines() {
     // filters airlines based on selectedAirport and adding in 'disabled' property that controls whether the object will be grayed out in the Select component
     let airlinesFiltered = data.airlines.map(airline => {
-      let airlineFound = data.routes.some(route => 
+      let airlineFound = data.routes.some(route =>
         (route.airline === airline.id)
         && (selectedAirport === "all" || route.src === selectedAirport || route.dest === selectedAirport)
         )
@@ -69,38 +101,9 @@ const App = () => {
     return airportsFiltered
   }
 
-  const filterRoutes = () => {
-    // selectedAirports and selectedAirlines
-    const filtered = data.routes.filter(route => {
-      // if route contains selectedAirport (or all) AND selectedAirline (or all), show it
-      return ((route.airline === selectedAirline || selectedAirline === "all") &&
-          (route.src === selectedAirport || route.dest === selectedAirport || selectedAirport === "all"))
-    })
-    updateCurrentRoutes(filtered)
-  }
-
   const displayedRoutes = () => {
     const pagesIndex = currentPage - 1
     return pages[pagesIndex]
-  }
-
-  function buildPages(perPage) {
-    const routes = currentRoutes;
-    const numberOfPages = Math.ceil(routes.length / perPage)
-    const lastEntryIndex = routes.length - 1
-    let pagesArr = [];
-    for (let n = 0; n < numberOfPages; n++) {
-      let page = [];
-      (() => {
-        for (let rowNum = 0; rowNum < perPage; rowNum++) {
-          let routesEntryIndex = rowNum + (perPage * n)
-          if (routesEntryIndex > lastEntryIndex) return
-          page = page.concat(routes[routesEntryIndex])
-        }
-      })() // IIFE to break only inner nested loop with `return`
-      pagesArr.push(page)
-    }
-    return pagesArr
   }
 
   // ayh: extract this and Button components out?
